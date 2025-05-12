@@ -14,6 +14,7 @@ const StaffSchema = new mongoose.Schema({
     leaves: Array,
     halfDay: Array,
     attendance: Object,
+    staffImage: String,
 })
 
 module.exports = mongoose.model("Staff", StaffSchema)
