@@ -56,6 +56,8 @@ router.post("/order", async (req, res) => {
         customerObject: req.body.customerObject,
         status: "Pending",
         orderNumber: orderNumber,
+        customerImage: req.body.customerImage,
+        guaranteerImage: req.body.guaranteerImage,
         productObject: {
           ...req.body.orderObject,
           quantity: req.body.quantity,
@@ -76,10 +78,8 @@ router.post("/order", async (req, res) => {
           interest: req.body.tpf.intrest,
           amountOfEMI: req.body.tpf.amountOfEMI,
           numberOfEMILeft: req.body.tpf.numberOfEMI,
-          
-          
         },
-        
+        date: new Date(),
         financeNumber: financeNumber,
       });
 

@@ -10,6 +10,9 @@ const TPFSchema = new mongoose.Schema({
     productObject: Object,
     status: String,
     EMI: Array,
+    customerImage: String,
+    guaranteerImage: String,
+    date: Date,
 })
 
 module.exports = mongoose.model("TPF", TPFSchema)

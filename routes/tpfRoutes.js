@@ -53,7 +53,17 @@ router.post("/tpf", async (req, res) => {
     FinanceObject.financeObject.numberOfEMILeft = emiLeft.toString();
     FinanceObject.markModified("financeObject");
 
+    let totalSum =0;
 
+    FinanceObject.EMI.map((i,index)=>{totalSum+=i.paymentAmount})
+    totalSum += req.body.paymentAmount
+    
+    let totalAmount = FinanceObject.financeObject.amountOfEMI*FinanceObject.financeObject.numberOfEMI
+
+    if(totalAmount <= totalSum){
+      FinanceObject.status = "Completed"
+    }
+    
     await FinanceObject.save();
 
     res.status(200).json({ message: "EMI added successfully", data: FinanceObject });
