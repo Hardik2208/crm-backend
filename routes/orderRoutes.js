@@ -71,6 +71,8 @@ router.post("/order", async (req, res) => {
           interest: req.body.tpf.intrest,
           amountOfEMI: req.body.tpf.amountOfEMI,
           numberOfEMILeft: req.body.tpf.numberOfEMI,
+          customerImage: req.body.tpf.customerImage,
+
         },
         financeNumber: financeNumber,
       });
