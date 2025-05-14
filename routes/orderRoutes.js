@@ -7,6 +7,8 @@ const router = express.Router();
 
 router.post("/order", async (req, res) => {
   try {
+    console.log(req.body)
+
     let product = await Product.findOne({
       modelName: req.body.modelName,
       productObject: req.body.orderObject,
@@ -71,7 +73,7 @@ router.post("/order", async (req, res) => {
           interest: req.body.tpf.intrest,
           amountOfEMI: req.body.tpf.amountOfEMI,
           numberOfEMILeft: req.body.tpf.numberOfEMI,
-          customerImage: req.body.customerImage,
+          
           
         },
         
