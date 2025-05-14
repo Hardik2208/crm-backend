@@ -54,11 +54,14 @@ router.post("/order", async (req, res) => {
     if (req.body.paymentObject.paymentType === "THIRD PARTY FINANCE") {
       const newFinance = new Finance({
         customerObject: req.body.customerObject,
+        status: "Pending",
         orderNumber: orderNumber,
         productObject: {
           ...req.body.orderObject,
           quantity: req.body.quantity,
           modelName: req.body.modelName,
+          serialNumber: req.body?.serialNumber,
+          IMEI: req.body?.IMEI,
           category: req.body.category,
         },
         paymentObject: req.body.paymentObject,

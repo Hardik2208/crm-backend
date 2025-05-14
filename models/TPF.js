@@ -8,6 +8,7 @@ const TPFSchema = new mongoose.Schema({
     guaranteerObject: Object,
     customerObject: Object,
     productObject: Object,
+    status: String,
     EMI: Array,
 })
 
