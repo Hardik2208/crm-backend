@@ -13,11 +13,25 @@ router.post('/Customer', async (req, res) => {
     }
 });
 
+router.post('/Customer/Search', async (req, res) => {
+    try {
+        const allCustomers = await Customer.find();
+        const result = allCustomers.filter(customer => {
+            return Object.values(customer.toObject()).some(value =>
+                value?.toString().toLowerCase().includes(searchTerm)
+            );
+        });
+        res.status(201).send(result);
+    } catch (err) {
+        res.status(500).send('Error adding customer: ' + err.message);
+    }
+});
+
 // Get All Customers
 router.get('/Customer', async (req, res) => {
     try {
-        const allEnquiries = await Customer.find();
-        res.status(200).send(allEnquiries);
+        const allCustomers = await Customer.find();
+        res.status(200).send(allCustomers);
     } catch (err) {
         res.status(500).send('Error fetching customers: ' + err.message);
     }
