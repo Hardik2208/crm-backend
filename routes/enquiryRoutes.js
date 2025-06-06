@@ -14,6 +14,30 @@ router.post('/enquiry', async (req, res) => {
     }
 });
 
+
+router.post("/enquiry/Search", async (req, res) => {
+  try {
+    const searchTerm = req.body.searchTerm?.toLowerCase(); // May be undefined
+
+    if (!searchTerm) {
+      return res.status(400).send("Search term is missing");
+    }
+
+    const allEnquiry = await Enquiry.find();
+
+    const result = allEnquiry.filter((Enquiry) => {
+      return Object.values(Enquiry.toObject()).some(
+        (value) => value && value.toString().toLowerCase().includes(searchTerm)
+      );
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Search Error:", err); // ✅ log full error
+    res.status(500).send("Error searching Enquiry: " + err.message);
+  }
+});
+
 // Get All Enquiries
 router.get('/enquiry', async (req, res) => {
     try {

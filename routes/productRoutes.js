@@ -14,6 +14,30 @@ router.post('/product', async (req, res) => {
     }
 });
 
+router.post("/product/Search", async (req, res) => {
+  try {
+    const searchTerm = req.body.searchTerm?.toLowerCase(); // May be undefined
+
+    if (!searchTerm) {
+      return res.status(400).send("Search term is missing");
+    }
+
+    const allProducts = await Product.find();
+
+    const result = allProducts.filter((customer) => {
+      return Object.values(customer.toObject()).some(
+        (value) => value && value.toString().toLowerCase().includes(searchTerm)
+      );
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Search Error:", err); // ✅ log full error
+    res.status(500).send("Error searching customer: " + err.message);
+  }
+});
+
+
 // Get All Products
 router.get('/product', async (req, res) => {
     try {

@@ -13,6 +13,30 @@ router.post('/staff', async (req, res) => {
     }
 });
 
+router.post("/staff/Search", async (req, res) => {
+  try {
+    const searchTerm = req.body.searchTerm?.toLowerCase(); // May be undefined
+
+    if (!searchTerm) {
+      return res.status(400).send("Search term is missing");
+    }
+
+    const allStaffs = await Staff.find();
+
+    const result = allStaffs.filter((customer) => {
+      return Object.values(customer.toObject()).some(
+        (value) => value && value.toString().toLowerCase().includes(searchTerm)
+      );
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Search Error:", err); // ✅ log full error
+    res.status(500).send("Error searching customer: " + err.message);
+  }
+});
+
+
 // Get All Staff
 router.get('/staff', async (req, res) => {
     try {

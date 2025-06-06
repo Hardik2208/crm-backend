@@ -13,6 +13,30 @@ router.get("/invoice", async (req, res) => {
   }
 });
 
+router.post("/invoice/Search", async (req, res) => {
+  try {
+    const searchTerm = req.body.searchTerm?.toLowerCase(); // May be undefined
+
+    if (!searchTerm) {
+      return res.status(400).send("Search term is missing");
+    }
+
+    const allInvoices = await Invoice.find();
+
+    const result = allInvoices.filter((customer) => {
+      return Object.values(customer.toObject()).some(
+        (value) => value && value.toString().toLowerCase().includes(searchTerm)
+      );
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Search Error:", err); // ✅ log full error
+    res.status(500).send("Error searching customer: " + err.message);
+  }
+});
+
+
 router.post("/invoice/order", async (req, res) => {
   try {
     const { orderNumber } = req.body;

@@ -20,6 +20,30 @@ router.post("/tpf/find", async (req, res) => {
   }
 });
 
+router.post("/tpf/Search", async (req, res) => {
+  try {
+    const searchTerm = req.body.searchTerm?.toLowerCase(); // May be undefined
+
+    if (!searchTerm) {
+      return res.status(400).send("Search term is missing");
+    }
+
+    const allTPFs = await TPF.find();
+
+    const result = allTPFs.filter((customer) => {
+      return Object.values(customer.toObject()).some(
+        (value) => value && value.toString().toLowerCase().includes(searchTerm)
+      );
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Search Error:", err); // ✅ log full error
+    res.status(500).send("Error searching customer: " + err.message);
+  }
+});
+
+
 router.post("/tpf/find/order", async (req, res) => {
   try {
     console.log(req.body)
