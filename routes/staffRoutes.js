@@ -13,9 +13,22 @@ router.post('/staff', async (req, res) => {
     }
 });
 
+// Recursive function to search nested objects
+function containsSearchTerm(obj, searchTerm) {
+  if (typeof obj === "string" || typeof obj === "number") {
+    return obj.toString().toLowerCase().includes(searchTerm);
+  }
+
+  if (typeof obj === "object" && obj !== null) {
+    return Object.values(obj).some(value => containsSearchTerm(value, searchTerm));
+  }
+
+  return false;
+}
+
 router.post("/staff/Search", async (req, res) => {
   try {
-    const searchTerm = req.body.searchTerm?.toLowerCase(); // May be undefined
+    const searchTerm = req.body.searchTerm?.toLowerCase();
 
     if (!searchTerm) {
       return res.status(400).send("Search term is missing");
@@ -23,18 +36,18 @@ router.post("/staff/Search", async (req, res) => {
 
     const allStaffs = await Staff.find();
 
-    const result = allStaffs.filter((customer) => {
-      return Object.values(customer.toObject()).some(
-        (value) => value && value.toString().toLowerCase().includes(searchTerm)
-      );
+    const result = allStaffs.filter((staff) => {
+      const staffObj = staff.toObject();
+      return containsSearchTerm(staffObj, searchTerm);
     });
 
     res.status(200).json(result);
   } catch (err) {
-    console.error("Search Error:", err); // ✅ log full error
-    res.status(500).send("Error searching customer: " + err.message);
+    console.error("Search Error:", err);
+    res.status(500).send("Error searching staff: " + err.message);
   }
 });
+
 
 
 // Get All Staff
