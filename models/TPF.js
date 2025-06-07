@@ -13,6 +13,7 @@ const TPFSchema = new mongoose.Schema({
     customerImage: String,
     guaranteerImage: String,
     date: Date,
+    upcomingDate: Date,
 })
 
 module.exports = mongoose.model("TPF", TPFSchema)

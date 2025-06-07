@@ -7,7 +7,9 @@ const router = express.Router();
 
 router.post("/order", async (req, res) => {
   try {
-    console.log(req.body)
+    const orderDate = new Date();
+    const nextMonthDate = new Date(orderDate);
+    nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
 
     let product = await Product.findOne({
       modelName: req.body.modelName,
@@ -79,7 +81,8 @@ router.post("/order", async (req, res) => {
           amountOfEMI: req.body.tpf.amountOfEMI,
           numberOfEMILeft: req.body.tpf.numberOfEMI,
         },
-        date: new Date(),
+        date: orderDate,
+        upcomingDate: nextMonthDate,
         financeNumber: financeNumber,
       });
 
@@ -100,7 +103,9 @@ function containsSearchTerm(obj, searchTerm) {
   }
 
   if (typeof obj === "object" && obj !== null) {
-    return Object.values(obj).some(value => containsSearchTerm(value, searchTerm));
+    return Object.values(obj).some((value) =>
+      containsSearchTerm(value, searchTerm)
+    );
   }
 
   return false;
@@ -128,8 +133,6 @@ router.post("/order/Search", async (req, res) => {
   }
 });
 
-
-
 router.get("/order", async (req, res) => {
   const allOrder = await Order.find();
   res.send(allOrder);
@@ -154,7 +157,7 @@ router.get("/order/month", async (req, res) => {
     },
   });
 
-  res.send(thisMonthOrders)
+  res.send(thisMonthOrders);
 });
 
 module.exports = router;

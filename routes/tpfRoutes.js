@@ -59,10 +59,7 @@ router.post("/tpf/Search", async (req, res) => {
 
 router.post("/tpf/find/order", async (req, res) => {
   try {
-    console.log(req.body)
-    console.log("api hit")
     const { orderNumber } = req.body;
-    console.log("Searching for orderNumber:", orderNumber);
     const finance = await TPF.findOne({ orderNumber: Number(orderNumber) }); // make sure it's a number
     if (!finance) return res.status(404).send({ message: "Finance not found" });
     res.send(finance);
@@ -84,23 +81,28 @@ router.post("/tpf", async (req, res) => {
     let updatingEMI = { ...req.body, date: new Date() };
     FinanceObject.EMI = [...(FinanceObject.EMI || []), updatingEMI];
 
-
     let emiLeft = Number(FinanceObject.financeObject.numberOfEMILeft);
-    if (emiLeft>0){emiLeft -= 1}
+    if (emiLeft > 0) emiLeft -= 1;
     FinanceObject.financeObject.numberOfEMILeft = emiLeft.toString();
     FinanceObject.markModified("financeObject");
 
-    let totalSum =0;
+    let totalSum = 0;
+    FinanceObject.EMI.forEach(i => {
+      totalSum += Number(i.paymentAmount); // ensure paymentAmount is a number
+    });
 
-    FinanceObject.EMI.map((i,index)=>{totalSum+=i.paymentAmount})
+    const totalAmount = FinanceObject.financeObject.amountOfEMI * FinanceObject.financeObject.numberOfEMI;
 
-    
-    let totalAmount = FinanceObject.financeObject.amountOfEMI*FinanceObject.financeObject.numberOfEMI
-
-    if(totalAmount <= totalSum){
-      FinanceObject.status = "Completed"
+    if (totalAmount <= totalSum) {
+      FinanceObject.status = "Completed";
+      FinanceObject.upcomingDate = null; // No upcoming date if completed
+    } else {
+      // Update upcomingDate to next month
+      const currentDate = new Date(FinanceObject.upcomingDate || new Date());
+      const nextMonth = new Date(currentDate.setMonth(currentDate.getMonth() + 1));
+      FinanceObject.upcomingDate = nextMonth;
     }
-    
+
     await FinanceObject.save();
 
     res.status(200).json({ message: "EMI added successfully", data: FinanceObject });
@@ -109,6 +111,7 @@ router.post("/tpf", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 
 module.exports = router;
