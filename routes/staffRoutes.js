@@ -15,17 +15,23 @@ router.post('/staff', async (req, res) => {
 
 // Recursive function to search nested objects
 function containsSearchTerm(obj, searchTerm) {
+  if (obj instanceof Date) {
+    // Convert Date to 'YYYY-MM-DD' format
+    return obj.toISOString().split("T")[0].includes(searchTerm);
+  }
+
   if (typeof obj === "string" || typeof obj === "number") {
     return obj.toString().toLowerCase().includes(searchTerm);
   }
 
   if (typeof obj === "object" && obj !== null) {
-    return Object.values(obj).some(value => containsSearchTerm(value, searchTerm));
+    return Object.values(obj).some((value) =>
+      containsSearchTerm(value, searchTerm)
+    );
   }
 
   return false;
 }
-
 router.post("/staff/Search", async (req, res) => {
   try {
     const searchTerm = req.body.searchTerm?.toLowerCase();

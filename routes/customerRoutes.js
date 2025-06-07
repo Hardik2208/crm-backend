@@ -13,22 +13,9 @@ router.post("/Customer", async (req, res) => {
   }
 });
 
-// Recursive function to search nested objects
-function containsSearchTerm(obj, searchTerm) {
-  if (typeof obj === "string" || typeof obj === "number") {
-    return obj.toString().toLowerCase().includes(searchTerm);
-  }
-
-  if (typeof obj === "object" && obj !== null) {
-    return Object.values(obj).some(value => containsSearchTerm(value, searchTerm));
-  }
-
-  return false;
-}
-
 router.post("/customer/Search", async (req, res) => {
   try {
-    const searchTerm = req.body.searchTerm?.toLowerCase();
+    const searchTerm = req.body.searchTerm?.toLowerCase(); // May be undefined
 
     if (!searchTerm) {
       return res.status(400).send("Search term is missing");
@@ -37,17 +24,17 @@ router.post("/customer/Search", async (req, res) => {
     const allCustomers = await Customer.find();
 
     const result = allCustomers.filter((customer) => {
-      const customerObj = customer.toObject();
-      return containsSearchTerm(customerObj, searchTerm);
+      return Object.values(customer.toObject()).some(
+        (value) => value && value.toString().toLowerCase().includes(searchTerm)
+      );
     });
 
     res.status(200).json(result);
   } catch (err) {
-    console.error("Search Error:", err);
+    console.error("Search Error:", err); // ✅ log full error
     res.status(500).send("Error searching customer: " + err.message);
   }
 });
-
 
 // Get All Customers
 router.get("/Customer", async (req, res) => {

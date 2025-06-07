@@ -98,6 +98,11 @@ router.post("/order", async (req, res) => {
 
 // Recursive function to search nested objects
 function containsSearchTerm(obj, searchTerm) {
+  if (obj instanceof Date) {
+    // Convert Date to 'YYYY-MM-DD' format
+    return obj.toISOString().split("T")[0].includes(searchTerm);
+  }
+
   if (typeof obj === "string" || typeof obj === "number") {
     return obj.toString().toLowerCase().includes(searchTerm);
   }
