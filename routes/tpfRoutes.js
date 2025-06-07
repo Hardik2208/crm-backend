@@ -93,16 +93,20 @@ router.post("/tpf", async (req, res) => {
     FinanceObject.financeObject.numberOfEMILeft = emiLeft.toString();
     FinanceObject.markModified("financeObject");
 
+    // Sum all payments
     let totalSum = 0;
     FinanceObject.EMI.forEach(i => {
-      totalSum += Number(i.paymentAmount); // ensure paymentAmount is a number
+      totalSum += Number(i.paymentAmount);
     });
 
-    const totalAmount = FinanceObject.financeObject.amountOfEMI * FinanceObject.financeObject.numberOfEMI;
+    // Calculate total expected amount
+    const totalAmount =
+      Number(FinanceObject.financeObject.amountOfEMI) *
+      Number(FinanceObject.financeObject.numberOfEMI);
 
-    if (totalAmount <= totalSum) {
+    if (totalSum >= totalAmount) {
       FinanceObject.status = "Completed";
-      FinanceObject.upcomingDate = null; // No upcoming date if completed
+      FinanceObject.upcomingDate = null; // No next EMI needed
     } else {
       // Update upcomingDate to next month
       const currentDate = new Date(FinanceObject.upcomingDate || new Date());
@@ -118,6 +122,7 @@ router.post("/tpf", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 
 
