@@ -29,14 +29,26 @@ router.post("/order", async (req, res) => {
         return res.status(400).send("IMEI is required for MOBILE category.");
       }
 
+      // --- Important: Ensure IMEI is an array for consistent handling ---
+      // This handles cases where IMEI might be stored as a single string instead of an array.
+      // Ideally, your schema and data entry should always ensure it's an array.
+      if (typeof product.productObject.IMEI === 'string') {
+          product.productObject.IMEI = [product.productObject.IMEI];
+      } else if (!Array.isArray(product.productObject.IMEI)) {
+          return res.status(500).send("Product IMEI data is malformed (not string or array).");
+      }
+
       const imeiIndex = product.productObject.IMEI.indexOf(imei);
       if (imeiIndex === -1) {
         return res.status(400).send("IMEI not found in stock.");
       }
-      console.log(product.productObject.IMEI[imeiIndex])
+
+      console.log("Found IMEI to remove:", product.productObject.IMEI[imeiIndex]); // Log to confirm
       product.productObject.IMEI.splice(imeiIndex, 1);
       product.quantity -= 1;
-      await product.save();
+      // --- CRITICAL LINE FOR NESTED ARRAY MODIFICATIONS ---
+      product.markModified('productObject.IMEI'); // <--- ADD THIS LINE
+      await product.save(); // Save immediately after modification
       updated = true;
     }
 
@@ -48,20 +60,30 @@ router.post("/order", async (req, res) => {
           .send("Serial Number is required for this category.");
       }
 
+      // --- Important: Ensure serialNumber is an array for consistent handling ---
+      if (typeof product.productObject.serialNumber === 'string') {
+          product.productObject.serialNumber = [product.productObject.serialNumber];
+      } else if (!Array.isArray(product.productObject.serialNumber)) {
+          return res.status(500).send("Product Serial Number data is malformed (not string or array).");
+      }
+
       const serialIndex = product.productObject.serialNumber.indexOf(serial);
       if (serialIndex === -1) {
         return res.status(400).send("Serial Number not found in stock.");
       }
-      console.log(product.productObject.serialNumber[serialIndex])
+
+      console.log("Found Serial Number to remove:", product.productObject.serialNumber[serialIndex]); // Log to confirm
       product.productObject.serialNumber.splice(serialIndex, 1);
       product.quantity -= 1;
-      await product.save();
+      // --- CRITICAL LINE FOR NESTED ARRAY MODIFICATIONS ---
+      product.markModified('productObject.serialNumber'); // <--- ADD THIS LINE
+      await product.save(); // Save immediately after modification
       updated = true;
     }
 
     if (category === "OTHERS") {
       product.quantity -= quantity;
-      await product.save();
+      await product.save(); // Quantity change on top-level field is usually detected
       updated = true;
     }
 
@@ -69,6 +91,7 @@ router.post("/order", async (req, res) => {
       return res.status(400).send("Invalid category or missing identifiers.");
     }
 
+    // --- Rest of your code (no changes needed here related to product update) ---
 
     // Generate order and finance numbers
     const orderNumber = (await Order.countDocuments()) + 1;
@@ -108,10 +131,10 @@ router.post("/order", async (req, res) => {
         guaranteerImage: req.body.guaranteerImage,
         productObject: {
           ...req.body.orderObject,
-          quantity,
+          quantity: 1, // Quantity for single IMEI/Serial products is 1
           modelName,
-          serialNumber: req.body.serialNumber,
-          IMEI: req.body.IMEI,
+          serialNumber: req.body.orderObject.serialNumber, // Get from orderObject
+          IMEI: req.body.orderObject.IMEI, // Get from orderObject
           category,
         },
         paymentObject: req.body.paymentObject,
