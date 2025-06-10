@@ -33,9 +33,10 @@ router.post("/order", async (req, res) => {
       if (imeiIndex === -1) {
         return res.status(400).send("IMEI not found in stock.");
       }
-
+      console.log(product.productObject.IMEI[imeiIndex])
       product.productObject.IMEI.splice(imeiIndex, 1);
       product.quantity -= 1;
+      await product.save();
       updated = true;
     }
 
@@ -51,14 +52,16 @@ router.post("/order", async (req, res) => {
       if (serialIndex === -1) {
         return res.status(400).send("Serial Number not found in stock.");
       }
-
+      console.log(product.productObject.serialNumber[serialIndex])
       product.productObject.serialNumber.splice(serialIndex, 1);
       product.quantity -= 1;
+      await product.save();
       updated = true;
     }
 
     if (category === "OTHERS") {
       product.quantity -= quantity;
+      await product.save();
       updated = true;
     }
 
@@ -66,7 +69,6 @@ router.post("/order", async (req, res) => {
       return res.status(400).send("Invalid category or missing identifiers.");
     }
 
-    await product.save();
 
     // Generate order and finance numbers
     const orderNumber = (await Order.countDocuments()) + 1;
