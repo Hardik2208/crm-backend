@@ -7,6 +7,7 @@ const ProductSchema = new mongoose.Schema({
     modelName: String,
     description: String,
     amount: Number,
+    sellingPrice: Number,
 })
 
 module.exports = mongoose.model("Product", ProductSchema)
