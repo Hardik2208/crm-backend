@@ -10,8 +10,8 @@ router.post("/order", async (req, res) => {
     const orderDate = new Date();
     const nextMonthDate = new Date(orderDate);
     nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-
-    const { modelName, category, orderObject, quantity } = req.body;
+    const { modelName, category, orderObject } = req.body;
+    let quantity = parseInt(req.body.quantity); // convert string to number
 
     let product = await Product.findOne({ modelName });
 
@@ -21,30 +21,38 @@ router.post("/order", async (req, res) => {
         .send("Product Not Found in Stock or insufficient quantity.");
     }
 
-    // Category-specific unique identifier logic
     let updated = false;
 
-    if (category === "MOBILE" && req.body.IMEI) {
-      const imeiIndex = product.productObject.IMEI.indexOf(req.body.IMEI);
+    if (category === "MOBILE") {
+      const imei = orderObject.IMEI;
+      if (!imei) {
+        return res.status(400).send("IMEI is required for MOBILE category.");
+      }
+
+      const imeiIndex = product.productObject.IMEI.indexOf(imei);
       if (imeiIndex === -1) {
         return res.status(400).send("IMEI not found in stock.");
       }
+
       product.productObject.IMEI.splice(imeiIndex, 1);
       product.quantity -= 1;
       updated = true;
     }
 
-    if (
-      ["TV", "FRIDGE", "WASHING MACHINE"].includes(category) &&
-      req.body.serialNumber
-    ) {
-      const snIndex = product.productObject.serialNumber.indexOf(
-        req.body.serialNumber
-      );
-      if (snIndex === -1) {
+    if (["TV", "FRIDGE", "WASHING MACHINE"].includes(category)) {
+      const serial = orderObject.serialNumber;
+      if (!serial) {
+        return res
+          .status(400)
+          .send("Serial Number is required for this category.");
+      }
+
+      const serialIndex = product.productObject.serialNumber.indexOf(serial);
+      if (serialIndex === -1) {
         return res.status(400).send("Serial Number not found in stock.");
       }
-      product.productObject.serialNumber.splice(snIndex, 1);
+
+      product.productObject.serialNumber.splice(serialIndex, 1);
       product.quantity -= 1;
       updated = true;
     }
