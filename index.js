@@ -9,10 +9,7 @@ const server = express();
 // Middleware
 server.use(express.json());
 server.use(bodyParser.json());
-server.use(cors({
-  origin: "https://myshopdesk.onrender.com",
-  credentials: true
-}));
+server.use(cors());
 
 // Routes
 server.use('/api', require('./routes/enquiryRoutes'));
