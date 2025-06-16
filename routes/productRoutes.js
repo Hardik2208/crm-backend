@@ -5,14 +5,18 @@ const router = express.Router();
 // Add Product
 router.post('/product', async (req, res) => {
     try {
-        console.log(req.body);
-        const newProduct = new Product(req.body); // ✅ Corrected variable name
-        await newProduct.save(); // ✅ Await save
+        const newProduct = new Product(req.body);
+        await newProduct.save();
         res.status(201).send('Product Added Successfully!');
     } catch (err) {
-        res.status(500).send('Error adding product: ' + err.message);
+        if (err.code === 11000) { // Duplicate key error
+            res.status(400).send('Product with the same model name already exists.');
+        } else {
+            res.status(500).send('Error adding product: ' + err.message);
+        }
     }
 });
+
 
 // Recursive function to search nested objects
 function containsSearchTerm(obj, searchTerm) {
