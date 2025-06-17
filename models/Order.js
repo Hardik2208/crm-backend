@@ -11,6 +11,8 @@ const OrderSchema = new mongoose.Schema(
     tpf : Object,
     date : Date,
     customerImage: String,
+    guaranteerImage: String,
+
 }
 )
 
