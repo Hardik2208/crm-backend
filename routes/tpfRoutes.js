@@ -11,7 +11,7 @@ router.post("/tpf/find", async (req, res) => {
   try {
     const { financeNumber } = req.body; // extract it
     console.log("Searching for financeNumber:", financeNumber);
-    const finance = await TPF.findOne({ financeNumber: Number(financeNumber) }); // make sure it's a number
+    const finance = await TPF.findOne({ financeNumber: Number(financeNumber) }); 
     if (!finance) return res.status(404).send({ message: "Finance not found" });
     res.send(finance);
   } catch (err) {
@@ -89,7 +89,7 @@ router.post("/tpf", async (req, res) => {
     FinanceObject.EMI = [...(FinanceObject.EMI || []), updatingEMI];
 
     let emiLeft = Number(FinanceObject.financeObject.numberOfEMILeft);
-    if (emiLeft > 0) emiLeft -= 1;
+    if (emiLeft > 0 ) emiLeft -= 1;
     FinanceObject.financeObject.numberOfEMILeft = emiLeft.toString();
     FinanceObject.markModified("financeObject");
 

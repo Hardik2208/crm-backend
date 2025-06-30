@@ -151,6 +151,7 @@ router.post("/order", async (req, res) => {
         guaranteerObject: {
           name: req.body.tpf.guaranteerName,
           phoneNumber: req.body.tpf.guaranteerPhoneNumber,
+          address: req.body.tpf.guaranteerAddress,
         },
         financeObject: {
           downPayment: req.body.tpf.downPayment,
@@ -161,7 +162,7 @@ router.post("/order", async (req, res) => {
           numberOfEMILeft: req.body.tpf.numberOfEMI,
         },
         date: orderDate,
-        upcomingDate: nextMonthDate,
+        upcomingDate: new Date(req.body.tpf.upcomingDate), // ✅ Consistent format
         financeNumber,
       });
 
@@ -174,7 +175,6 @@ router.post("/order", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
 
 // Recursive function to search nested objects
 function containsSearchTerm(obj, searchTerm) {
