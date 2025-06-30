@@ -138,6 +138,9 @@ router.get("/product/serial-suggestions", async (req, res) => {
     );
 
     res.json([...new Set(filtered)]);
+    console.log("Matched modelName:", modelName);
+console.log("Found serials:", allSerials);
+
   } catch (error) {
     console.error("Serial suggestions error:", error);
     res.status(500).json({ error: "Internal server error" });
