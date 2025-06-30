@@ -92,26 +92,48 @@ router.delete('/product/:id', async (req, res) => {
 });
 
 router.get("/product/model-suggestions", async (req, res) => {
-  const { category, query = "" } = req.query;
-  if (!category) return res.status(400).json({ error: "Category required" });
+  try {
+    const { category, query = "" } = req.query;
 
-  const models = await Product.find({
-    category: category.toUpperCase(),
-    modelName: { $regex: `^${query}`, $options: "i" }
-  }).distinct("modelName");
+    if (!category) {
+      return res.status(400).json({ error: "Category required" });
+    }
 
-  res.json(models);
+    // Escape regex special characters in query to avoid crash
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const models = await Product.find({
+      category: category.toUpperCase(),
+      modelName: { $regex: `^${escapedQuery}`, $options: "i" },
+    }).distinct("modelName");
+
+    res.json(models);
+  } catch (error) {
+    console.error("Model suggestions error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.get("/product/serial-suggestions", async (req, res) => {
-  const { modelName } = req.query;
-  if (!modelName) return res.status(400).json({ error: "Model name required" });
+  try {
+    const { modelName } = req.query;
 
-  const products = await Product.find({ modelName: modelName.toUpperCase() });
-  const allSerials = products.flatMap((p) => p.productObject.serialNumber || []);
+    if (!modelName) {
+      return res.status(400).json({ error: "Model name required" });
+    }
 
-  res.json([...new Set(allSerials)]);
+    const products = await Product.find({
+      modelName: modelName.toUpperCase(),
+    });
+
+    const allSerials = products.flatMap((p) => p.productObject.serialNumber || []);
+    res.json([...new Set(allSerials)]);
+  } catch (error) {
+    console.error("Serial suggestions error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
+
 
 
 module.exports = router;
