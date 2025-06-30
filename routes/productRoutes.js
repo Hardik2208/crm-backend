@@ -1,22 +1,22 @@
-const express = require('express');
-const Product = require('../models/Product');
+const express = require("express");
+const Product = require("../models/Product");
 const router = express.Router();
 
 // Add Product
-router.post('/product', async (req, res) => {
-    try {
-        const newProduct = new Product(req.body);
-        await newProduct.save();
-        res.status(201).send('Product Added Successfully!');
-    } catch (err) {
-        if (err.code === 11000) { // Duplicate key error
-            res.status(400).send('Product with the same model name already exists.');
-        } else {
-            res.status(500).send('Error adding product: ' + err.message);
-        }
+router.post("/product", async (req, res) => {
+  try {
+    const newProduct = new Product(req.body);
+    await newProduct.save();
+    res.status(201).send("Product Added Successfully!");
+  } catch (err) {
+    if (err.code === 11000) {
+      // Duplicate key error
+      res.status(400).send("Product with the same model name already exists.");
+    } else {
+      res.status(500).send("Error adding product: " + err.message);
     }
+  }
 });
-
 
 // Recursive function to search nested objects
 function containsSearchTerm(obj, searchTerm) {
@@ -60,35 +60,34 @@ router.post("/porduct/Search", async (req, res) => {
   }
 });
 
-
 // Get All Products
-router.get('/product', async (req, res) => {
-    try {
-        const allProducts = await Product.find();
-        res.status(200).send(allProducts);
-    } catch (err) {
-        res.status(500).send('Error fetching products: ' + err.message);
-    }
+router.get("/product", async (req, res) => {
+  try {
+    const allProducts = await Product.find();
+    res.status(200).send(allProducts);
+  } catch (err) {
+    res.status(500).send("Error fetching products: " + err.message);
+  }
 });
 
 // Update Product by ID
-router.put('/product/:id', async (req, res) => {
-    try {
-        await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.status(200).send('Product Updated Successfully');
-    } catch (err) {
-        res.status(500).send('Error updating product: ' + err.message);
-    }
+router.put("/product/:id", async (req, res) => {
+  try {
+    await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).send("Product Updated Successfully");
+  } catch (err) {
+    res.status(500).send("Error updating product: " + err.message);
+  }
 });
 
 //Delete Product by ID
-router.delete('/product/:id', async (req, res) => {
-    try {
-        await Product.findByIdAndDelete(req.params.id);
-        res.status(200).send('Product Deleted Successfully');
-    } catch (err) {
-        res.status(500).send('Error deleting product: ' + err.message);
-    }
+router.delete("/product/:id", async (req, res) => {
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+    res.status(200).send("Product Deleted Successfully");
+  } catch (err) {
+    res.status(500).send("Error deleting product: " + err.message);
+  }
 });
 
 router.get("/product/model-suggestions", async (req, res) => {
@@ -100,7 +99,7 @@ router.get("/product/model-suggestions", async (req, res) => {
     }
 
     // Escape regex special characters in query to avoid crash
-    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
     const models = await Product.find({
       category: category.toUpperCase(),
@@ -116,36 +115,35 @@ router.get("/product/model-suggestions", async (req, res) => {
 
 router.get("/product/serial-suggestions", async (req, res) => {
   try {
-    const { modelName, query = "" } = req.query;
+    router.get("/product/serial-suggestions", async (req, res) => {
+      const { modelName, query = "" } = req.query;
+      if (!modelName)
+        return res.status(400).json({ error: "Model name required" });
 
-    if (!modelName) {
-      return res.status(400).json({ error: "Model name required" });
-    }
+      const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const products = await Product.find({
+        modelName: modelName.toUpperCase(),
+      });
 
-    const products = await Product.find({
-      modelName: modelName.toUpperCase(),
+      const allSerials = products.flatMap((p) =>
+        Array.isArray(p.productObject?.serialNumber)
+          ? p.productObject.serialNumber
+          : Array.isArray(p.productObject?.IMEI)
+          ? p.productObject.IMEI
+          : []
+      );
+
+      const filtered = allSerials.filter((s) =>
+        new RegExp(`^${escapedQuery}`, "i").test(s)
+      );
+
+      res.json([...new Set(filtered)]);
     });
-
-    const allSerials = products.flatMap(p =>
-      Array.isArray(p.productObject.serialNumber)
-        ? p.productObject.serialNumber
-        : [p.productObject.serialNumber]
-    );
-
-    const filtered = allSerials.filter(s =>
-      new RegExp(`^${escapedQuery}`, "i").test(s)
-    );
-
-    res.json([...new Set(filtered)]);
   } catch (error) {
     console.error("Serial suggestions error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
-
-
 
 module.exports = router;
