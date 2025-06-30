@@ -125,30 +125,29 @@ router.get("/product/serial-suggestions", async (req, res) => {
       category: category.toUpperCase(),
     });
 
-    let allValues = [];
+    // Initialize allSerials properly
+    let allSerials = [];
 
     for (let p of products) {
-      const serialsOrImeis =
+      const entries =
         category.toUpperCase() === "MOBILE"
           ? p.productObject?.IMEI || []
           : p.productObject?.serialNumber || [];
 
-      allValues.push(...serialsOrImeis);
+      allSerials.push(...entries);
     }
 
-    const filtered = allValues.filter((s) =>
+    const filtered = allSerials.filter((s) =>
       new RegExp(`^${escapedQuery}`, "i").test(s)
     );
 
-    res.json([...new Set(filtered)]);
-    console.log("Matched modelName:", modelName);
-console.log("Found serials:", allSerials);
-
+    return res.json([...new Set(filtered)]);
   } catch (error) {
     console.error("Serial suggestions error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 
 module.exports = router;
