@@ -115,35 +115,34 @@ router.get("/product/model-suggestions", async (req, res) => {
 
 router.get("/product/serial-suggestions", async (req, res) => {
   try {
-    router.get("/product/serial-suggestions", async (req, res) => {
-      const { modelName, query = "" } = req.query;
-      if (!modelName)
-        return res.status(400).json({ error: "Model name required" });
+    const { modelName, query = "" } = req.query;
+    if (!modelName)
+      return res.status(400).json({ error: "Model name required" });
 
-      const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-      const products = await Product.find({
-        modelName: modelName.toUpperCase(),
-      });
-
-      const allSerials = products.flatMap((p) =>
-        Array.isArray(p.productObject?.serialNumber)
-          ? p.productObject.serialNumber
-          : Array.isArray(p.productObject?.IMEI)
-          ? p.productObject.IMEI
-          : []
-      );
-
-      const filtered = allSerials.filter((s) =>
-        new RegExp(`^${escapedQuery}`, "i").test(s)
-      );
-
-      res.json([...new Set(filtered)]);
+    const products = await Product.find({
+      modelName: { $regex: `^${modelName}$`, $options: "i" }, // <-- fixed here
     });
+
+    const allSerials = products.flatMap((p) =>
+      Array.isArray(p.productObject?.serialNumber)
+        ? p.productObject.serialNumber
+        : Array.isArray(p.productObject?.IMEI)
+        ? p.productObject.IMEI
+        : []
+    );
+
+    const filtered = allSerials.filter((s) =>
+      new RegExp(`^${escapedQuery}`, "i").test(s)
+    );
+
+    res.json([...new Set(filtered)]);
   } catch (error) {
     console.error("Serial suggestions error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 module.exports = router;
