@@ -116,23 +116,35 @@ router.get("/product/model-suggestions", async (req, res) => {
 
 router.get("/product/serial-suggestions", async (req, res) => {
   try {
-    const { modelName } = req.query;
+    const { modelName, query = "" } = req.query;
 
     if (!modelName) {
       return res.status(400).json({ error: "Model name required" });
     }
 
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     const products = await Product.find({
       modelName: modelName.toUpperCase(),
     });
 
-    const allSerials = products.flatMap((p) => p.productObject.serialNumber || []);
-    res.json([...new Set(allSerials)]);
+    const allSerials = products.flatMap(p =>
+      Array.isArray(p.productObject.serialNumber)
+        ? p.productObject.serialNumber
+        : [p.productObject.serialNumber]
+    );
+
+    const filtered = allSerials.filter(s =>
+      new RegExp(`^${escapedQuery}`, "i").test(s)
+    );
+
+    res.json([...new Set(filtered)]);
   } catch (error) {
     console.error("Serial suggestions error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 
 
