@@ -91,4 +91,27 @@ router.delete('/product/:id', async (req, res) => {
     }
 });
 
+router.get("/product/model-suggestions", async (req, res) => {
+  const { category, query = "" } = req.query;
+  if (!category) return res.status(400).json({ error: "Category required" });
+
+  const models = await Product.find({
+    category: category.toUpperCase(),
+    modelName: { $regex: `^${query}`, $options: "i" }
+  }).distinct("modelName");
+
+  res.json(models);
+});
+
+router.get("/product/serial-suggestions", async (req, res) => {
+  const { modelName } = req.query;
+  if (!modelName) return res.status(400).json({ error: "Model name required" });
+
+  const products = await Product.find({ modelName: modelName.toUpperCase() });
+  const allSerials = products.flatMap((p) => p.productObject.serialNumber || []);
+
+  res.json([...new Set(allSerials)]);
+});
+
+
 module.exports = router;
