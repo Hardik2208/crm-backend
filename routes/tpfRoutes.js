@@ -11,7 +11,7 @@ router.post("/tpf/find", async (req, res) => {
   try {
     const { financeNumber } = req.body; // extract it
     console.log("Searching for financeNumber:", financeNumber);
-    const finance = await TPF.findOne({ financeNumber: Number(financeNumber) }); 
+    const finance = await TPF.findOne({ financeNumber: Number(financeNumber) });
     if (!finance) return res.status(404).send({ message: "Finance not found" });
     res.send(finance);
   } catch (err) {
@@ -62,8 +62,6 @@ router.post("/tpf/Search", async (req, res) => {
   }
 });
 
-
-
 router.post("/tpf/find/order", async (req, res) => {
   try {
     const { orderNumber } = req.body;
@@ -77,7 +75,7 @@ router.post("/tpf/find/order", async (req, res) => {
 
 router.post("/tpf", async (req, res) => {
   try {
-    const { financeNumber, paymentAmount, paymentType, remarks } = req.body;
+    const { financeNumber, paymentAmount } = req.body;
 
     const FinanceObject = await TPF.findOne({ financeNumber });
 
@@ -85,45 +83,51 @@ router.post("/tpf", async (req, res) => {
       return res.status(404).json({ error: "Finance record not found" });
     }
 
-    let updatingEMI = { ...req.body, date: new Date() };
+    const updatingEMI = { ...req.body, date: new Date() };
     FinanceObject.EMI = [...(FinanceObject.EMI || []), updatingEMI];
 
+    // Update EMI Left
     let emiLeft = Number(FinanceObject.financeObject.numberOfEMILeft);
-    if (emiLeft > 0 ) emiLeft -= 1;
+    const emiAmount = Number(FinanceObject.financeObject.amountOfEMI);
+
+    if (Number(paymentAmount) >= emiAmount) {
+      emiLeft -= 1;
+    }
+
+    emiLeft = Math.max(emiLeft, 0);
     FinanceObject.financeObject.numberOfEMILeft = emiLeft.toString();
     FinanceObject.markModified("financeObject");
 
     // Sum all payments
-    let totalSum = 0;
-    FinanceObject.EMI.forEach(i => {
-      totalSum += Number(i.paymentAmount);
-    });
+    const totalSum = FinanceObject.EMI.reduce(
+      (acc, emi) => acc + Number(emi.paymentAmount),
+      0
+    );
 
-    // Calculate total expected amount
     const totalAmount =
-      Number(FinanceObject.financeObject.amountOfEMI) *
-      Number(FinanceObject.financeObject.numberOfEMI);
+      emiAmount * Number(FinanceObject.financeObject.numberOfEMI);
 
     if (totalSum >= totalAmount) {
       FinanceObject.status = "Completed";
-      FinanceObject.upcomingDate = null; // No next EMI needed
+      FinanceObject.upcomingDate = null;
     } else {
-      // Update upcomingDate to next month
       const currentDate = new Date(FinanceObject.upcomingDate || new Date());
-      const nextMonth = new Date(currentDate.setMonth(currentDate.getMonth() + 1));
+      const nextMonth = new Date(
+        currentDate.setMonth(currentDate.getMonth() + 1)
+      );
       FinanceObject.upcomingDate = nextMonth;
     }
 
     await FinanceObject.save();
 
-    res.status(200).json({ message: "EMI added successfully", data: FinanceObject });
+    res.status(200).json({
+      message: "EMI added successfully",
+      data: FinanceObject,
+    });
   } catch (err) {
     console.error("Error in /tpf POST:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
-
-
 
 module.exports = router;

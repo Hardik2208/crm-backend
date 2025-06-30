@@ -24,6 +24,7 @@ router.post("/order", async (req, res) => {
 
     let updated = false;
 
+    // Category-wise IMEI / Serial Number Checks
     if (category === "MOBILE") {
       const imeis = orderObject.IMEI || orderObject.imei || [];
 
@@ -39,7 +40,6 @@ router.post("/order", async (req, res) => {
           .send("Product IMEI data is malformed or missing.");
       }
 
-      // Check if all IMEIs are available
       const allExist = imeis.every((i) =>
         product.productObject.IMEI.includes(i)
       );
@@ -48,7 +48,6 @@ router.post("/order", async (req, res) => {
         return res.status(400).send("One or more IMEIs not found in stock.");
       }
 
-      // Remove each IMEI from stock
       imeis.forEach((i) => {
         const index = product.productObject.IMEI.indexOf(i);
         if (index !== -1) product.productObject.IMEI.splice(index, 1);
@@ -107,6 +106,25 @@ router.post("/order", async (req, res) => {
     const orderNumber = (await Order.countDocuments()) + 1;
     const financeNumber = (await Finance.countDocuments()) + 1;
 
+    // ✅ Extract & Convert Phone Numbers to Number
+    const customerPhone = Number(req.body.customerObject.phoneNumber);
+    const customerSecondary = req.body.customerObject.secondaryNumber
+      ? Number(req.body.customerObject.secondaryNumber)
+      : null;
+
+    // ✅ Validate
+    if (!customerPhone || isNaN(customerPhone)) {
+      return res.status(400).send("Invalid or missing primary phone number.");
+    }
+
+    if (
+      req.body.customerObject.secondaryNumber &&
+      (isNaN(customerSecondary) || !customerSecondary)
+    ) {
+      return res.status(400).send("Invalid secondary phone number.");
+    }
+
+    // ✅ Save order
     const newOrder = new Order({
       ...req.body,
       orderNumber,
@@ -115,26 +133,39 @@ router.post("/order", async (req, res) => {
 
     await newOrder.save();
 
-    // Customer
-    let customer = await Customer.findOne({
-      phoneNumber: req.body.customerObject.phoneNumber,
-    });
+    // ✅ Check by primary number only
+    let customer = await Customer.findOne({ phoneNumber: customerPhone });
 
     if (!customer) {
       const newCustomer = new Customer({
-        ...req.body.customerObject,
+        name: req.body.customerObject.name,
+        phoneNumber: customerPhone,
+        secondaryNumber: customerSecondary,
+        address: req.body.customerObject.address,
+        email: req.body.customerObject.email,
         orderList: [{ ...req.body, orderNumber }],
       });
       await newCustomer.save();
     } else {
+      // Optional: Update secondary number
+      if (customerSecondary && customer.secondaryNumber !== customerSecondary) {
+        customer.secondaryNumber = customerSecondary;
+      }
+
       customer.orderList.push({ ...req.body, orderNumber });
       await customer.save();
     }
 
-    // Finance
+    // ✅ Handle Finance if applicable
     if (req.body.paymentObject.paymentType === "THIRD PARTY FINANCE") {
       const newFinance = new Finance({
-        customerObject: req.body.customerObject,
+        customerObject: {
+          name: req.body.customerObject.name,
+          phoneNumber: customerPhone,
+          secondaryNumber: customerSecondary,
+          address: req.body.customerObject.address,
+          email: req.body.customerObject.email,
+        },
         status: "Pending",
         orderNumber,
         customerImage: req.body.customerImage,
@@ -162,7 +193,7 @@ router.post("/order", async (req, res) => {
           numberOfEMILeft: req.body.tpf.numberOfEMI,
         },
         date: orderDate,
-        upcomingDate: new Date(req.body.tpf.upcomingDate), // ✅ Consistent format
+        upcomingDate: new Date(req.body.tpf.upcomingDate),
         financeNumber,
       });
 
@@ -171,7 +202,7 @@ router.post("/order", async (req, res) => {
 
     res.status(201).send("Order placed successfully.");
   } catch (err) {
-    console.error(err);
+    console.error("Error placing order:", err);
     res.status(500).send("Internal Server Error");
   }
 });
