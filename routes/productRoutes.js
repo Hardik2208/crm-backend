@@ -112,28 +112,31 @@ router.get("/product/model-suggestions", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 router.get("/product/serial-suggestions", async (req, res) => {
   try {
-    const { modelName, query = "" } = req.query;
-    if (!modelName)
-      return res.status(400).json({ error: "Model name required" });
+    const { modelName, query = "", category } = req.query;
+    if (!modelName || !category)
+      return res.status(400).json({ error: "Model name & category required" });
 
     const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
     const products = await Product.find({
-      modelName: { $regex: `^${modelName}$`, $options: "i" }, // <-- fixed here
+      modelName: modelName.toUpperCase(),
+      category: category.toUpperCase(),
     });
 
-    const allSerials = products.flatMap((p) =>
-      Array.isArray(p.productObject?.serialNumber)
-        ? p.productObject.serialNumber
-        : Array.isArray(p.productObject?.IMEI)
-        ? p.productObject.IMEI
-        : []
-    );
+    let allValues = [];
 
-    const filtered = allSerials.filter((s) =>
+    for (let p of products) {
+      const serialsOrImeis =
+        category.toUpperCase() === "MOBILE"
+          ? p.productObject?.IMEI || []
+          : p.productObject?.serialNumber || [];
+
+      allValues.push(...serialsOrImeis);
+    }
+
+    const filtered = allValues.filter((s) =>
       new RegExp(`^${escapedQuery}`, "i").test(s)
     );
 
