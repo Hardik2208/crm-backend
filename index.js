@@ -19,6 +19,7 @@ server.use('/api', require('./routes/staffRoutes'));
 server.use('/api', require('./routes/customerRoutes'));
 server.use('/api', require('./routes/tpfRoutes'));
 server.use('/api', require('./routes/attendanceRoutes')); 
+server.use('/api', require('./routes/categoryRoutes')); 
 server.use('/api', require('./routes/invoiceRoutes'))
 
 // Connect to DB
