@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 
 const CategorySchema = new mongoose.Schema({
     name : String,
-    inputField : Array,
+    inputField : String,
 });
 
 
