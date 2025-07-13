@@ -21,3 +21,5 @@ router.get('/category', async (req, res) => {
         res.status(500).send('Error fetching category: ' + err.message);
     }
 });
+
+module.exports = router;
