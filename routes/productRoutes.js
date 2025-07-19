@@ -36,33 +36,33 @@ router.post("/product", async (req, res) => {
     const existingProduct = await Product.findOne({ modelName });
 
     if (existingProduct) {
-      // ✅ Update quantity
-      existingProduct.quantity += quantityNumber;
+  // ✅ Correct quantity addition
+  existingProduct.quantity = parseInt(existingProduct.quantity || 0) + quantityNumber;
 
-      // ✅ Determine key (IMEI or serialNumber)
-      const key = category === "MOBILE" ? "IMEI" : "serialNumber";
-      const newEntries = productObject[key] || [];
+  // ✅ Determine key (IMEI or serialNumber)
+  const key = category === "MOBILE" ? "IMEI" : "serialNumber";
+  const newEntries = productObject[key] || [];
 
-      // ✅ Ensure productObject and key exist in existing product
-      if (!existingProduct.productObject) {
-        existingProduct.productObject = {};
-      }
-      if (!existingProduct.productObject[key]) {
-        existingProduct.productObject[key] = [];
-      }
+  if (!existingProduct.productObject) {
+    existingProduct.productObject = {};
+  }
+  if (!existingProduct.productObject[key]) {
+    existingProduct.productObject[key] = [];
+  }
 
-      const existingList = existingProduct.productObject[key];
+  const existingList = existingProduct.productObject[key];
 
-      // ✅ Merge and deduplicate
-      const mergedList = [...new Set([...existingList, ...newEntries])];
-      existingProduct.productObject[key] = mergedList;
+  // ✅ Merge and deduplicate
+  const mergedList = [...new Set([...existingList, ...newEntries])];
+  existingProduct.productObject[key] = mergedList;
 
-      await existingProduct.save();
+  await existingProduct.save();
 
-      console.log("Updated product:", existingProduct);
+  console.log("✅ Updated product:", existingProduct);
 
-      return res.status(200).send("Existing product updated with new quantity and identifiers.");
-    } else {
+  return res.status(200).send("Existing product updated with new quantity and identifiers.");
+}
+ else {
       // ✅ Create new product entry
       const newProduct = new Product({
         category,
