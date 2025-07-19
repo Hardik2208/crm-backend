@@ -13,56 +13,73 @@ router.post("/product", async (req, res) => {
       supplierObject,
       amount,
       sellingPrice,
-      productObject = {}
+      productObject = {},
     } = req.body;
 
-    // Save purchase entry
+    const quantityNumber = parseInt(quantity); // ✅ Convert quantity to number
+    if (isNaN(quantityNumber)) {
+      return res.status(400).send("Invalid quantity provided.");
+    }
+
+    // Save the purchase entry
     const newPurchase = new Purchase({
       category,
-      quantity,
+      quantity: quantityNumber,
       modelName,
       supplierObject,
       amount,
-      sellingPrice
+      sellingPrice,
     });
     await newPurchase.save();
 
-    // Check for existing product
+    // Check if product already exists
     const existingProduct = await Product.findOne({ modelName });
 
     if (existingProduct) {
-      // Update quantity
-      existingProduct.quantity += quantity;
+      // ✅ Update quantity
+      existingProduct.quantity += quantityNumber;
 
-      // Dynamically update IMEI or serialNumber based on category
+      // ✅ Determine key (IMEI or serialNumber)
       const key = category === "MOBILE" ? "IMEI" : "serialNumber";
       const newEntries = productObject[key] || [];
 
-      // Merge and remove duplicates
-      const existingList = existingProduct.productObject[key] || [];
-      const mergedList = [...new Set([...existingList, ...newEntries])];
+      // ✅ Ensure productObject and key exist in existing product
+      if (!existingProduct.productObject) {
+        existingProduct.productObject = {};
+      }
+      if (!existingProduct.productObject[key]) {
+        existingProduct.productObject[key] = [];
+      }
 
+      const existingList = existingProduct.productObject[key];
+
+      // ✅ Merge and deduplicate
+      const mergedList = [...new Set([...existingList, ...newEntries])];
       existingProduct.productObject[key] = mergedList;
 
       await existingProduct.save();
+
+      console.log("Updated product:", existingProduct);
+
       return res.status(200).send("Existing product updated with new quantity and identifiers.");
     } else {
-      // Create new product entry
+      // ✅ Create new product entry
       const newProduct = new Product({
         category,
-        quantity,
+        quantity: quantityNumber,
         modelName,
         supplierObject,
         amount,
         sellingPrice,
-        productObject
+        productObject,
       });
 
       await newProduct.save();
+
       return res.status(201).send("New product added successfully!");
     }
   } catch (err) {
-    console.error(err);
+    console.error("Error in /product route:", err);
     res.status(500).send("Error adding/updating product: " + err.message);
   }
 });
@@ -197,7 +214,5 @@ router.get("/product/serial-suggestions", async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 });
-
-
 
 module.exports = router;
