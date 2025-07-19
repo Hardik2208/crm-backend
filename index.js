@@ -21,6 +21,7 @@ server.use('/api', require('./routes/tpfRoutes'));
 server.use('/api', require('./routes/attendanceRoutes')); 
 server.use('/api', require('./routes/categoryRoutes')); 
 server.use('/api', require('./routes/invoiceRoutes'))
+server.use('/api', require('./routes/purchaseRoutes'));
 
 // Connect to DB
 connectDB();
