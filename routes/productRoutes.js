@@ -1,10 +1,19 @@
 const express = require("express");
 const Product = require("../models/Product");
+const Purchase = require("../models/Purchase");
 const router = express.Router();
 
 // Add Product
 router.post("/product", async (req, res) => {
   try {
+    const { category, quantity, modelName, supplierObject } = req.body;
+    const newPurchase = new Purchase({
+      category,
+      quantity,
+      modelName,
+      supplierObject,
+    });
+    await newPurchase.save();
     const newProduct = new Product(req.body);
     await newProduct.save();
     res.status(201).send("Product Added Successfully!");
