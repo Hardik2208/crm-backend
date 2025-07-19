@@ -6,26 +6,67 @@ const router = express.Router();
 // Add Product
 router.post("/product", async (req, res) => {
   try {
-    const { category, quantity, modelName, supplierObject } = req.body;
+    const {
+      category,
+      quantity,
+      modelName,
+      supplierObject,
+      amount,
+      sellingPrice,
+      productObject = {}
+    } = req.body;
+
+    // Save purchase entry
     const newPurchase = new Purchase({
       category,
       quantity,
       modelName,
       supplierObject,
+      amount,
+      sellingPrice
     });
     await newPurchase.save();
-    const newProduct = new Product(req.body);
-    await newProduct.save();
-    res.status(201).send("Product Added Successfully!");
-  } catch (err) {
-    if (err.code === 11000) {
-      // Duplicate key error
-      res.status(400).send("Product with the same model name already exists.");
+
+    // Check for existing product
+    const existingProduct = await Product.findOne({ modelName });
+
+    if (existingProduct) {
+      // Update quantity
+      existingProduct.quantity += quantity;
+
+      // Dynamically update IMEI or serialNumber based on category
+      const key = category === "MOBILE" ? "IMEI" : "serialNumber";
+      const newEntries = productObject[key] || [];
+
+      // Merge and remove duplicates
+      const existingList = existingProduct.productObject[key] || [];
+      const mergedList = [...new Set([...existingList, ...newEntries])];
+
+      existingProduct.productObject[key] = mergedList;
+
+      await existingProduct.save();
+      return res.status(200).send("Existing product updated with new quantity and identifiers.");
     } else {
-      res.status(500).send("Error adding product: " + err.message);
+      // Create new product entry
+      const newProduct = new Product({
+        category,
+        quantity,
+        modelName,
+        supplierObject,
+        amount,
+        sellingPrice,
+        productObject
+      });
+
+      await newProduct.save();
+      return res.status(201).send("New product added successfully!");
     }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error adding/updating product: " + err.message);
   }
 });
+
 
 // Recursive function to search nested objects
 function containsSearchTerm(obj, searchTerm) {
