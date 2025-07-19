@@ -16,7 +16,7 @@ router.post("/order", async (req, res) => {
 
     const {
       modelName,
-      category: categoryName,           // string e.g. "MOBILE"
+      category: categoryName,           
       orderObject,
       customerObject,
       paymentObject,
