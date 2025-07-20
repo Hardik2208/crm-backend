@@ -16,12 +16,12 @@ router.post("/product", async (req, res) => {
       productObject = {},
     } = req.body;
 
-    const quantityNumber = parseInt(quantity); // ✅ Convert quantity to number
+    const quantityNumber = parseInt(quantity);
     if (isNaN(quantityNumber)) {
       return res.status(400).send("Invalid quantity provided.");
     }
 
-    // Save the purchase entry
+    // Save purchase entry
     const newPurchase = new Purchase({
       category,
       quantity: quantityNumber,
@@ -36,34 +36,39 @@ router.post("/product", async (req, res) => {
     const existingProduct = await Product.findOne({ modelName });
 
     if (existingProduct) {
-  // ✅ Correct quantity addition
-  existingProduct.quantity = parseInt(existingProduct.quantity || 0) + quantityNumber;
+      // ✅ Safely convert and add quantity
+      const currentQty = parseInt(existingProduct.quantity || 0);
+      const newQty = currentQty + quantityNumber;
 
-  // ✅ Determine key (IMEI or serialNumber)
-  const key = category === "MOBILE" ? "IMEI" : "serialNumber";
-  const newEntries = productObject[key] || [];
+      // ✅ Assign explicitly
+      existingProduct.set("quantity", newQty);
+      existingProduct.set("amount", amount);
+      existingProduct.set("sellingPrice", sellingPrice);
+      existingProduct.set("supplierObject", supplierObject);
 
-  if (!existingProduct.productObject) {
-    existingProduct.productObject = {};
-  }
-  if (!existingProduct.productObject[key]) {
-    existingProduct.productObject[key] = [];
-  }
+      // ✅ Handle productObject updates safely
+      const key = category === "MOBILE" ? "IMEI" : "serialNumber";
+      const newList = productObject[key] || [];
 
-  const existingList = existingProduct.productObject[key];
+      if (!existingProduct.productObject) {
+        existingProduct.productObject = {};
+      }
 
-  // ✅ Merge and deduplicate
-  const mergedList = [...new Set([...existingList, ...newEntries])];
-  existingProduct.productObject[key] = mergedList;
+      const existingList = existingProduct.productObject[key] || [];
+      const mergedList = [...new Set([...existingList, ...newList])];
 
-  await existingProduct.save();
+      existingProduct.set("productObject", {
+        ...existingProduct.productObject,
+        [key]: mergedList,
+      });
 
-  console.log("✅ Updated product:", existingProduct);
+      await existingProduct.save();
 
-  return res.status(200).send("Existing product updated with new quantity and identifiers.");
-}
- else {
-      // ✅ Create new product entry
+      console.log("✅ Updated product:", existingProduct);
+
+      return res.status(200).send("Existing product updated with new quantity and identifiers.");
+    } else {
+      // ✅ Create new product
       const newProduct = new Product({
         category,
         quantity: quantityNumber,
@@ -75,14 +80,14 @@ router.post("/product", async (req, res) => {
       });
 
       await newProduct.save();
-
       return res.status(201).send("New product added successfully!");
     }
   } catch (err) {
-    console.error("Error in /product route:", err);
+    console.error("❌ Product update error:", err);
     res.status(500).send("Error adding/updating product: " + err.message);
   }
 });
+
 
 
 // Recursive function to search nested objects
