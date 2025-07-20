@@ -32,43 +32,44 @@ router.post("/product", async (req, res) => {
     });
     await newPurchase.save();
 
-    // Check if product already exists
+    // Check if product exists
     const existingProduct = await Product.findOne({ modelName });
 
     if (existingProduct) {
-      // ✅ Safely convert and add quantity
-      const currentQty = parseInt(existingProduct.quantity || 0);
-      const newQty = currentQty + quantityNumber;
-
-      // ✅ Assign explicitly
-      existingProduct.set("quantity", newQty);
-      existingProduct.set("amount", amount);
-      existingProduct.set("sellingPrice", sellingPrice);
-      existingProduct.set("supplierObject", supplierObject);
-
-      // ✅ Handle productObject updates safely
       const key = category === "MOBILE" ? "IMEI" : "serialNumber";
-      const newList = productObject[key] || [];
+      const newIdentifiers = productObject[key] || [];
 
+      // Ensure productObject exists
       if (!existingProduct.productObject) {
         existingProduct.productObject = {};
       }
 
-      const existingList = existingProduct.productObject[key] || [];
-      const mergedList = [...new Set([...existingList, ...newList])];
+      const existingIdentifiers = existingProduct.productObject[key] || [];
+
+      // ✅ Merge identifiers uniquely
+      const mergedIdentifiers = [...new Set([...existingIdentifiers, ...newIdentifiers])];
+
+      // ✅ Correct quantity calculation
+      const updatedQuantity = existingIdentifiers.length + newIdentifiers.length;
 
       existingProduct.set("productObject", {
         ...existingProduct.productObject,
-        [key]: mergedList,
+        [key]: mergedIdentifiers,
+        company: productObject.company || existingProduct.productObject.company,
       });
+
+      existingProduct.set("quantity", mergedIdentifiers.length); // ✅ Quantity should reflect total items
+      existingProduct.set("amount", amount);
+      existingProduct.set("sellingPrice", sellingPrice);
+      existingProduct.set("supplierObject", supplierObject);
 
       await existingProduct.save();
 
-      console.log("✅ Updated product:", existingProduct);
+      console.log("✅ Final Updated Product:", existingProduct);
 
-      return res.status(200).send("Existing product updated with new quantity and identifiers.");
+      return res.status(200).send("Existing product updated with merged IMEIs and quantity.");
     } else {
-      // ✅ Create new product
+      // ✅ Create new product entry
       const newProduct = new Product({
         category,
         quantity: quantityNumber,
@@ -87,6 +88,7 @@ router.post("/product", async (req, res) => {
     res.status(500).send("Error adding/updating product: " + err.message);
   }
 });
+
 
 
 
